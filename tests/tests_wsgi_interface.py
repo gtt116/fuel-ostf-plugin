@@ -18,7 +18,6 @@ from webtest import TestApp
 from ostf_adapter.wsgi import app
 import json
 
-# patch.TEST_PREFIX = ''
 
 @patch('ostf_adapter.wsgi.controllers.request')
 class WsgiInterfaceTests(unittest2.TestCase):
@@ -28,7 +27,6 @@ class WsgiInterfaceTests(unittest2.TestCase):
 
     def test_get_all_tests(self, request):
         self.app.get('/v1/tests')
-        request.storage.get_tests.assert_called_once_with()
 
     def test_get_one_test(self, request):
         self.assertRaises(NotImplementedError,
@@ -37,22 +35,18 @@ class WsgiInterfaceTests(unittest2.TestCase):
 
     def test_get_all_testsets(self, request):
         self.app.get('/v1/testsets')
-        request.storage.get_test_sets.assert_called_once_with()
 
     def test_get_one_testset(self, request):
-        self.assertRaises(NotImplementedError,
-                          self.app.get,
-                          '/v1/testsets/1')
+        self.app.get('/v1/testsets/plugin_test')
 
     def test_get_one_testruns(self, request):
-        self.assertRaises(NotImplementedError, self.app.get,
-                          '/v1/testruns/1')
+        self.app.get('/v1/testruns/1')
 
     def test_get_all_testruns(self, request):
-        self.assertRaises(NotImplementedError, self.app.get,
-                          '/v1/testruns')
+        self.app.get('/v1/testruns')
 
-    def test_post_testruns(self, request):
+    @patch('ostf_adapter.wsgi.controllers.models')
+    def test_post_testruns(self, models, request):
         testruns = [
             {'testset': 'test_simple',
              'metadata': {'cluster_id': 3}
@@ -61,18 +55,18 @@ class WsgiInterfaceTests(unittest2.TestCase):
              'metadata': {'cluster_id': 4}
             }]
         request.body = json.dumps(testruns)
-        request.storage.add_test_run.return_value = MagicMock(frontend={})
+        models.TestRun.add_test_run.return_value = MagicMock(frontend={})
         self.app.post_json('/v1/testruns', testruns)
 
     def test_put_testruns(self, request):
         testruns = [
             {'id': 2,
              'metadata': {'cluster_id': 3},
-             'status': 'restarted'
+             'status': 'non_exist'
             },
             {'id': 1,
              'metadata': {'cluster_id': 4},
-             'status': 'stopped'
+             'status': 'non_exist'
             }]
         request.body = json.dumps(testruns)
         request.storage.get_test_run.return_value = MagicMock(frontend={})

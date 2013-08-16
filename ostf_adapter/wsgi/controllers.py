@@ -15,9 +15,11 @@
 import json
 import logging
 
-
 from pecan import rest, expose, request
-from ostf_adapter import exceptions
+from ostf_adapter.storage import models
+
+from sqlalchemy import desc, func, asc
+from sqlalchemy.orm import joinedload
 
 LOG = logging.getLogger(__name__)
 
@@ -44,18 +46,27 @@ class TestsController(BaseRestController):
 
     @expose('json')
     def get_all(self):
-        return [item.frontend for item in request.storage.get_tests()]
+        with request.session.begin(subtransactions=True):
+            return [item.frontend for item
+                    in request.session.query(models.Test).all()]
 
 
 class TestsetsController(BaseRestController):
 
     @expose('json')
     def get_one(self, test_set):
-        raise NotImplementedError()
+        with request.session.begin(subtransactions=True):
+            test_set = request.session.query(models.TestSet)\
+                .filter_by(id=test_set).first()
+            if test_set and isinstance(test_set, models.TestSet):
+                return test_set.frontend
+            return {}
 
     @expose('json')
     def get_all(self):
-        return [item.frontend for item in request.storage.get_test_sets()]
+        with request.session.begin(subtransactions=True):
+            return [item.frontend for item
+                    in request.session.query(models.TestSet).all()]
 
 
 class TestrunsController(BaseRestController):
@@ -66,16 +77,29 @@ class TestrunsController(BaseRestController):
 
     @expose('json')
     def get_all(self):
-        raise NotImplementedError()
+        with request.session.begin(subtransactions=True):
+            return [item.frontend for item
+                    in request.session.query(models.TestRun).all()]
 
     @expose('json')
     def get_one(self, test_run_id):
-        raise NotImplementedError()
+        with request.session.begin(subtransactions=True):
+            test_run = request.session.query(models.TestRun)\
+                .filter_by(id=test_run_id).first()
+            if test_run and isinstance(test_run, models.TestRun):
+                return test_run.frontend
+            return {}
 
     @expose('json')
     def get_last(self, cluster_id):
-        return [item.frontend for
-                item in request.storage.get_last_test_results(cluster_id)]
+        with request.session.begin(subtransactions=True):
+            test_run_ids = request.session.query(func.max(models.TestRun.id)) \
+                .group_by(models.TestRun.test_set_id).\
+                filter_by(cluster_id=cluster_id)
+            test_runs = request.session.query(models.TestRun). \
+                options(joinedload('tests')). \
+                filter(models.TestRun.id.in_(test_run_ids))
+            return [item.frontend for item in test_runs]
 
     @expose('json')
     def post(self):
@@ -87,22 +111,6 @@ class TestrunsController(BaseRestController):
             tests = test_run.get('tests', [])
             res.append(self._run(test_set, metadata, tests))
         return res
-
-    def _run(self, test_set_data, metadata, tests):
-        session = request.storage.get_session()
-        test_set = request.storage.get_test_set(test_set_data)
-        if test_set is None:
-            LOG.error('No test set %s.', test_set_data)
-            raise exceptions.OstfException()
-        transport = request.plugin_manager[test_set.driver]
-        if self._check_last_running(test_set.id, metadata['cluster_id']):
-            test_run = request.storage.add_test_run(
-                session, test_set.id, metadata['cluster_id'], tests=tests)
-            transport.obj.run(test_run, test_set)
-            data = test_run.frontend
-            session.close()
-            return data
-        return {}
 
     @expose('json')
     def put(self):
@@ -116,31 +124,46 @@ class TestrunsController(BaseRestController):
                 data.append(self._restart(test_run))
         return data
 
-    def _check_last_running(self, test_set, cluster_id):
-        test_run = request.storage.get_last_test_run(test_set, cluster_id)
-        return not bool(test_run) or test_run.is_finished()
+    def _run(self, test_set_data, metadata, tests):
+        with request.session.begin(subtransactions=True):
+            test_set = models.TestSet.get_test_set(
+                request.session, test_set_data)
+            plugin = request.plugin_manager[test_set.driver]
+            if models.TestRun.is_last_running(
+                    request.session, test_set.id, metadata['cluster_id']):
+                test_run = models.TestRun.add_test_run(
+                    request.session, test_set.id,
+                    metadata['cluster_id'], tests=tests)
+                plugin.obj.run(test_run, test_set)
+                return test_run.frontend
+            return {}
 
     def _restart(self, test_run):
-        tests = test_run.get('tests', [])
-        test_run = request.storage.get_test_run(test_run['id'])
-        if self._check_last_running(test_run.test_set_id, test_run.cluster_id):
-            test_set = request.storage.get_test_set(test_run.test_set_id)
-            transport = request.plugin_manager[test_set.driver]
-            request.storage.update_test_run(test_run.id, status='running')
-            if tests:
-                request.storage.update_test_run_tests(test_run.id, tests)
-            transport.obj.run(test_run, test_set, tests)
-            return request.storage.get_test_run(
-                test_run.id, joined=True).frontend
-        return {}
+        with request.session.begin(subtransactions=True):
+            tests = test_run.get('tests', [])
+            test_run = models.TestRun.get_test_run(request.session,
+                                                   test_run['id'])
+            if models.TestRun.is_last_running(request.session,
+                                              test_run.test_set_id,
+                                              test_run.cluster_id):
+                plugin = request.plugin_manager[test_run.test_set.driver]
+                test_run.update(request.session, 'running')
+                if tests:
+                    models.Test.update_test_run_tests(
+                        request.session, test_run.id, tests)
+                plugin.obj.run(test_run, test_run.test_set, tests)
+                return test_run.frontend
+            return {}
 
     def _kill(self, test_run):
-        test_run = request.storage.get_test_run(test_run['id'])
-        test_set = request.storage.get_test_set(test_run.test_set_id)
-        transport = request.plugin_manager[test_set.driver]
-        cleanup = test_set.cleanup_path
-        killed = transport.obj.kill(
-            test_run.id, test_run.cluster_id, cleanup=cleanup)
-        if killed:
-            request.storage.update_running_tests(test_run.id, status='stopped')
-        return request.storage.get_test_run(test_run.id, joined=True).frontend
+        with request.session.begin(subtransactions=True):
+            test_run = models.TestRun.get_test_run(
+                request.session, test_run['id'])
+            transport = request.plugin_manager[test_run.test_set.driver]
+            killed = transport.obj.kill(
+                test_run.id, test_run.cluster_id,
+                cleanup=test_run.test_set.cleanup_path)
+            if killed:
+                models.Test.update_running_tests(
+                    request.session, test_run.id, status='stopped')
+            return test_run.frontend

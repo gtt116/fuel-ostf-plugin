@@ -11,3 +11,15 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
+
+from ostf_adapter.storage import models
+
+
+def update_all_running_test_runs(session):
+    session.query(models.TestRun). \
+        filter_by(status='running'). \
+        update({'status': 'finished'}, synchronize_session=False)
+    session.query(models.Test). \
+        filter(models.Test.status.in_(('running', 'wait_running'))). \
+        update({'status': 'stopped'}, synchronize_session=False)
