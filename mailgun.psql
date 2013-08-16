@@ -1,0 +1,1908 @@
+--
+-- PostgreSQL database dump
+--
+
+SET statement_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = off;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+SET escape_string_warning = off;
+
+SET search_path = public, pg_catalog;
+
+--
+-- Name: cluster_mode; Type: TYPE; Schema: public; Owner: nailgun
+--
+
+CREATE TYPE cluster_mode AS ENUM (
+    'singlenode',
+    'multinode',
+    'ha'
+);
+
+
+ALTER TYPE public.cluster_mode OWNER TO nailgun;
+
+--
+-- Name: cluster_net_manager; Type: TYPE; Schema: public; Owner: nailgun
+--
+
+CREATE TYPE cluster_net_manager AS ENUM (
+    'FlatDHCPManager',
+    'VlanManager'
+);
+
+
+ALTER TYPE public.cluster_net_manager OWNER TO nailgun;
+
+--
+-- Name: cluster_status; Type: TYPE; Schema: public; Owner: nailgun
+--
+
+CREATE TYPE cluster_status AS ENUM (
+    'new',
+    'deployment',
+    'operational',
+    'error',
+    'remove'
+);
+
+
+ALTER TYPE public.cluster_status OWNER TO nailgun;
+
+--
+-- Name: license_type; Type: TYPE; Schema: public; Owner: nailgun
+--
+
+CREATE TYPE license_type AS ENUM (
+    'rhsm',
+    'rhn'
+);
+
+
+ALTER TYPE public.license_type OWNER TO nailgun;
+
+--
+-- Name: network_group_name; Type: TYPE; Schema: public; Owner: nailgun
+--
+
+CREATE TYPE network_group_name AS ENUM (
+    'fuelweb_admin',
+    'storage',
+    'management',
+    'public',
+    'floating',
+    'fixed'
+);
+
+
+ALTER TYPE public.network_group_name OWNER TO nailgun;
+
+--
+-- Name: node_error_type; Type: TYPE; Schema: public; Owner: nailgun
+--
+
+CREATE TYPE node_error_type AS ENUM (
+    'deploy',
+    'provision',
+    'deletion'
+);
+
+
+ALTER TYPE public.node_error_type OWNER TO nailgun;
+
+--
+-- Name: node_role; Type: TYPE; Schema: public; Owner: nailgun
+--
+
+CREATE TYPE node_role AS ENUM (
+    'controller',
+    'compute',
+    'cinder'
+);
+
+
+ALTER TYPE public.node_role OWNER TO nailgun;
+
+--
+-- Name: node_status; Type: TYPE; Schema: public; Owner: nailgun
+--
+
+CREATE TYPE node_status AS ENUM (
+    'ready',
+    'discover',
+    'provisioning',
+    'provisioned',
+    'deploying',
+    'error'
+);
+
+
+ALTER TYPE public.node_status OWNER TO nailgun;
+
+--
+-- Name: notif_status; Type: TYPE; Schema: public; Owner: nailgun
+--
+
+CREATE TYPE notif_status AS ENUM (
+    'read',
+    'unread'
+);
+
+
+ALTER TYPE public.notif_status OWNER TO nailgun;
+
+--
+-- Name: notif_topic; Type: TYPE; Schema: public; Owner: nailgun
+--
+
+CREATE TYPE notif_topic AS ENUM (
+    'discover',
+    'done',
+    'error',
+    'warning'
+);
+
+
+ALTER TYPE public.notif_topic OWNER TO nailgun;
+
+--
+-- Name: plugin_type; Type: TYPE; Schema: public; Owner: nailgun
+--
+
+CREATE TYPE plugin_type AS ENUM (
+    'nailgun',
+    'fuel'
+);
+
+
+ALTER TYPE public.plugin_type OWNER TO nailgun;
+
+--
+-- Name: possible_changes; Type: TYPE; Schema: public; Owner: nailgun
+--
+
+CREATE TYPE possible_changes AS ENUM (
+    'networks',
+    'attributes',
+    'disks'
+);
+
+
+ALTER TYPE public.possible_changes OWNER TO nailgun;
+
+--
+-- Name: release_state; Type: TYPE; Schema: public; Owner: nailgun
+--
+
+CREATE TYPE release_state AS ENUM (
+    'not_available',
+    'downloading',
+    'error',
+    'available'
+);
+
+
+ALTER TYPE public.release_state OWNER TO nailgun;
+
+--
+-- Name: task_name; Type: TYPE; Schema: public; Owner: nailgun
+--
+
+CREATE TYPE task_name AS ENUM (
+    'super',
+    'deploy',
+    'deployment',
+    'provision',
+    'node_deletion',
+    'cluster_deletion',
+    'check_before_deployment',
+    'check_networks',
+    'verify_networks',
+    'install_plugin',
+    'update_plugin',
+    'delete_plugin',
+    'redhat_setup',
+    'redhat_check_credentials',
+    'redhat_check_licenses',
+    'redhat_download_release',
+    'redhat_update_cobbler_profile'
+);
+
+
+ALTER TYPE public.task_name OWNER TO nailgun;
+
+--
+-- Name: task_status; Type: TYPE; Schema: public; Owner: nailgun
+--
+
+CREATE TYPE task_status AS ENUM (
+    'ready',
+    'running',
+    'error'
+);
+
+
+ALTER TYPE public.task_status OWNER TO nailgun;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- Name: allowed_networks; Type: TABLE; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+CREATE TABLE allowed_networks (
+    id integer NOT NULL,
+    network_id integer NOT NULL,
+    interface_id integer NOT NULL
+);
+
+
+ALTER TABLE public.allowed_networks OWNER TO nailgun;
+
+--
+-- Name: allowed_networks_id_seq; Type: SEQUENCE; Schema: public; Owner: nailgun
+--
+
+CREATE SEQUENCE allowed_networks_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.allowed_networks_id_seq OWNER TO nailgun;
+
+--
+-- Name: allowed_networks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nailgun
+--
+
+ALTER SEQUENCE allowed_networks_id_seq OWNED BY allowed_networks.id;
+
+
+--
+-- Name: allowed_networks_id_seq; Type: SEQUENCE SET; Schema: public; Owner: nailgun
+--
+
+SELECT pg_catalog.setval('allowed_networks_id_seq', 30, true);
+
+
+--
+-- Name: attributes; Type: TABLE; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+CREATE TABLE attributes (
+    id integer NOT NULL,
+    cluster_id integer,
+    editable text,
+    generated text
+);
+
+
+ALTER TABLE public.attributes OWNER TO nailgun;
+
+--
+-- Name: attributes_id_seq; Type: SEQUENCE; Schema: public; Owner: nailgun
+--
+
+CREATE SEQUENCE attributes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.attributes_id_seq OWNER TO nailgun;
+
+--
+-- Name: attributes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nailgun
+--
+
+ALTER SEQUENCE attributes_id_seq OWNED BY attributes.id;
+
+
+--
+-- Name: attributes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: nailgun
+--
+
+SELECT pg_catalog.setval('attributes_id_seq', 1, true);
+
+
+--
+-- Name: cluster_changes; Type: TABLE; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+CREATE TABLE cluster_changes (
+    id integer NOT NULL,
+    cluster_id integer,
+    node_id integer,
+    name possible_changes NOT NULL
+);
+
+
+ALTER TABLE public.cluster_changes OWNER TO nailgun;
+
+--
+-- Name: cluster_changes_id_seq; Type: SEQUENCE; Schema: public; Owner: nailgun
+--
+
+CREATE SEQUENCE cluster_changes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.cluster_changes_id_seq OWNER TO nailgun;
+
+--
+-- Name: cluster_changes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nailgun
+--
+
+ALTER SEQUENCE cluster_changes_id_seq OWNED BY cluster_changes.id;
+
+
+--
+-- Name: cluster_changes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: nailgun
+--
+
+SELECT pg_catalog.setval('cluster_changes_id_seq', 4, true);
+
+
+--
+-- Name: clusters; Type: TABLE; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+CREATE TABLE clusters (
+    id integer NOT NULL,
+    mode cluster_mode NOT NULL,
+    status cluster_status NOT NULL,
+    net_manager cluster_net_manager NOT NULL,
+    name character varying(50) NOT NULL,
+    release_id integer NOT NULL
+);
+
+
+ALTER TABLE public.clusters OWNER TO nailgun;
+
+--
+-- Name: clusters_id_seq; Type: SEQUENCE; Schema: public; Owner: nailgun
+--
+
+CREATE SEQUENCE clusters_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.clusters_id_seq OWNER TO nailgun;
+
+--
+-- Name: clusters_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nailgun
+--
+
+ALTER SEQUENCE clusters_id_seq OWNED BY clusters.id;
+
+
+--
+-- Name: clusters_id_seq; Type: SEQUENCE SET; Schema: public; Owner: nailgun
+--
+
+SELECT pg_catalog.setval('clusters_id_seq', 1, true);
+
+
+--
+-- Name: ip_addr_ranges; Type: TABLE; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+CREATE TABLE ip_addr_ranges (
+    id integer NOT NULL,
+    network_group_id integer,
+    first character varying(25) NOT NULL,
+    last character varying(25) NOT NULL
+);
+
+
+ALTER TABLE public.ip_addr_ranges OWNER TO nailgun;
+
+--
+-- Name: ip_addr_ranges_id_seq; Type: SEQUENCE; Schema: public; Owner: nailgun
+--
+
+CREATE SEQUENCE ip_addr_ranges_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.ip_addr_ranges_id_seq OWNER TO nailgun;
+
+--
+-- Name: ip_addr_ranges_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nailgun
+--
+
+ALTER SEQUENCE ip_addr_ranges_id_seq OWNED BY ip_addr_ranges.id;
+
+
+--
+-- Name: ip_addr_ranges_id_seq; Type: SEQUENCE SET; Schema: public; Owner: nailgun
+--
+
+SELECT pg_catalog.setval('ip_addr_ranges_id_seq', 6, true);
+
+
+--
+-- Name: ip_addrs; Type: TABLE; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+CREATE TABLE ip_addrs (
+    id integer NOT NULL,
+    network integer,
+    node integer,
+    ip_addr character varying(25) NOT NULL
+);
+
+
+ALTER TABLE public.ip_addrs OWNER TO nailgun;
+
+--
+-- Name: ip_addrs_id_seq; Type: SEQUENCE; Schema: public; Owner: nailgun
+--
+
+CREATE SEQUENCE ip_addrs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.ip_addrs_id_seq OWNER TO nailgun;
+
+--
+-- Name: ip_addrs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nailgun
+--
+
+ALTER SEQUENCE ip_addrs_id_seq OWNED BY ip_addrs.id;
+
+
+--
+-- Name: ip_addrs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: nailgun
+--
+
+SELECT pg_catalog.setval('ip_addrs_id_seq', 6, true);
+
+
+--
+-- Name: l2_connections; Type: TABLE; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+CREATE TABLE l2_connections (
+    id integer NOT NULL,
+    topology_id integer NOT NULL,
+    interface_id integer NOT NULL
+);
+
+
+ALTER TABLE public.l2_connections OWNER TO nailgun;
+
+--
+-- Name: l2_connections_id_seq; Type: SEQUENCE; Schema: public; Owner: nailgun
+--
+
+CREATE SEQUENCE l2_connections_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.l2_connections_id_seq OWNER TO nailgun;
+
+--
+-- Name: l2_connections_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nailgun
+--
+
+ALTER SEQUENCE l2_connections_id_seq OWNED BY l2_connections.id;
+
+
+--
+-- Name: l2_connections_id_seq; Type: SEQUENCE SET; Schema: public; Owner: nailgun
+--
+
+SELECT pg_catalog.setval('l2_connections_id_seq', 1, false);
+
+
+--
+-- Name: l2_topologies; Type: TABLE; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+CREATE TABLE l2_topologies (
+    id integer NOT NULL,
+    network_id integer NOT NULL
+);
+
+
+ALTER TABLE public.l2_topologies OWNER TO nailgun;
+
+--
+-- Name: l2_topologies_id_seq; Type: SEQUENCE; Schema: public; Owner: nailgun
+--
+
+CREATE SEQUENCE l2_topologies_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.l2_topologies_id_seq OWNER TO nailgun;
+
+--
+-- Name: l2_topologies_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nailgun
+--
+
+ALTER SEQUENCE l2_topologies_id_seq OWNED BY l2_topologies.id;
+
+
+--
+-- Name: l2_topologies_id_seq; Type: SEQUENCE SET; Schema: public; Owner: nailgun
+--
+
+SELECT pg_catalog.setval('l2_topologies_id_seq', 1, false);
+
+
+--
+-- Name: net_assignments; Type: TABLE; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+CREATE TABLE net_assignments (
+    id integer NOT NULL,
+    network_id integer NOT NULL,
+    interface_id integer NOT NULL
+);
+
+
+ALTER TABLE public.net_assignments OWNER TO nailgun;
+
+--
+-- Name: net_assignments_id_seq; Type: SEQUENCE; Schema: public; Owner: nailgun
+--
+
+CREATE SEQUENCE net_assignments_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.net_assignments_id_seq OWNER TO nailgun;
+
+--
+-- Name: net_assignments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nailgun
+--
+
+ALTER SEQUENCE net_assignments_id_seq OWNED BY net_assignments.id;
+
+
+--
+-- Name: net_assignments_id_seq; Type: SEQUENCE SET; Schema: public; Owner: nailgun
+--
+
+SELECT pg_catalog.setval('net_assignments_id_seq', 10, true);
+
+
+--
+-- Name: network_groups; Type: TABLE; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+CREATE TABLE network_groups (
+    id integer NOT NULL,
+    name network_group_name NOT NULL,
+    access character varying(20) NOT NULL,
+    release integer,
+    cluster_id integer,
+    network_size integer,
+    amount integer,
+    vlan_start integer,
+    cidr character varying(25),
+    gateway character varying(25),
+    netmask character varying(25) NOT NULL
+);
+
+
+ALTER TABLE public.network_groups OWNER TO nailgun;
+
+--
+-- Name: network_groups_id_seq; Type: SEQUENCE; Schema: public; Owner: nailgun
+--
+
+CREATE SEQUENCE network_groups_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.network_groups_id_seq OWNER TO nailgun;
+
+--
+-- Name: network_groups_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nailgun
+--
+
+ALTER SEQUENCE network_groups_id_seq OWNED BY network_groups.id;
+
+
+--
+-- Name: network_groups_id_seq; Type: SEQUENCE SET; Schema: public; Owner: nailgun
+--
+
+SELECT pg_catalog.setval('network_groups_id_seq', 6, true);
+
+
+--
+-- Name: networks; Type: TABLE; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+CREATE TABLE networks (
+    id integer NOT NULL,
+    release integer,
+    name character varying(100) NOT NULL,
+    access character varying(20) NOT NULL,
+    vlan_id integer,
+    network_group_id integer,
+    cidr character varying(25) NOT NULL,
+    gateway character varying(25)
+);
+
+
+ALTER TABLE public.networks OWNER TO nailgun;
+
+--
+-- Name: networks_id_seq; Type: SEQUENCE; Schema: public; Owner: nailgun
+--
+
+CREATE SEQUENCE networks_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.networks_id_seq OWNER TO nailgun;
+
+--
+-- Name: networks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nailgun
+--
+
+ALTER SEQUENCE networks_id_seq OWNED BY networks.id;
+
+
+--
+-- Name: networks_id_seq; Type: SEQUENCE SET; Schema: public; Owner: nailgun
+--
+
+SELECT pg_catalog.setval('networks_id_seq', 6, true);
+
+
+--
+-- Name: node_attributes; Type: TABLE; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+CREATE TABLE node_attributes (
+    id integer NOT NULL,
+    node_id integer,
+    volumes text,
+    interfaces text
+);
+
+
+ALTER TABLE public.node_attributes OWNER TO nailgun;
+
+--
+-- Name: node_attributes_id_seq; Type: SEQUENCE; Schema: public; Owner: nailgun
+--
+
+CREATE SEQUENCE node_attributes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.node_attributes_id_seq OWNER TO nailgun;
+
+--
+-- Name: node_attributes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nailgun
+--
+
+ALTER SEQUENCE node_attributes_id_seq OWNED BY node_attributes.id;
+
+
+--
+-- Name: node_attributes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: nailgun
+--
+
+SELECT pg_catalog.setval('node_attributes_id_seq', 2, true);
+
+
+--
+-- Name: node_nic_interfaces; Type: TABLE; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+CREATE TABLE node_nic_interfaces (
+    id integer NOT NULL,
+    node_id integer NOT NULL,
+    name character varying(128) NOT NULL,
+    mac character varying(32) NOT NULL,
+    max_speed integer,
+    current_speed integer
+);
+
+
+ALTER TABLE public.node_nic_interfaces OWNER TO nailgun;
+
+--
+-- Name: node_nic_interfaces_id_seq; Type: SEQUENCE; Schema: public; Owner: nailgun
+--
+
+CREATE SEQUENCE node_nic_interfaces_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.node_nic_interfaces_id_seq OWNER TO nailgun;
+
+--
+-- Name: node_nic_interfaces_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nailgun
+--
+
+ALTER SEQUENCE node_nic_interfaces_id_seq OWNED BY node_nic_interfaces.id;
+
+
+--
+-- Name: node_nic_interfaces_id_seq; Type: SEQUENCE SET; Schema: public; Owner: nailgun
+--
+
+SELECT pg_catalog.setval('node_nic_interfaces_id_seq', 6, true);
+
+
+--
+-- Name: nodes; Type: TABLE; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+CREATE TABLE nodes (
+    id integer NOT NULL,
+    cluster_id integer,
+    name character varying(100),
+    status node_status NOT NULL,
+    meta text,
+    mac character varying(17) NOT NULL,
+    ip character varying(15),
+    fqdn character varying(255),
+    manufacturer character varying(50),
+    platform_name character varying(150),
+    progress integer,
+    os_platform character varying(150),
+    role node_role,
+    pending_addition boolean,
+    pending_deletion boolean,
+    error_type node_error_type,
+    error_msg character varying(255),
+    "timestamp" timestamp without time zone NOT NULL,
+    online boolean
+);
+
+
+ALTER TABLE public.nodes OWNER TO nailgun;
+
+--
+-- Name: nodes_id_seq; Type: SEQUENCE; Schema: public; Owner: nailgun
+--
+
+CREATE SEQUENCE nodes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.nodes_id_seq OWNER TO nailgun;
+
+--
+-- Name: nodes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nailgun
+--
+
+ALTER SEQUENCE nodes_id_seq OWNED BY nodes.id;
+
+
+--
+-- Name: nodes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: nailgun
+--
+
+SELECT pg_catalog.setval('nodes_id_seq', 2, true);
+
+
+--
+-- Name: notifications; Type: TABLE; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+CREATE TABLE notifications (
+    id integer NOT NULL,
+    cluster_id integer,
+    node_id integer,
+    task_id integer,
+    topic notif_topic NOT NULL,
+    message text,
+    status notif_status NOT NULL,
+    datetime timestamp without time zone NOT NULL
+);
+
+
+ALTER TABLE public.notifications OWNER TO nailgun;
+
+--
+-- Name: notifications_id_seq; Type: SEQUENCE; Schema: public; Owner: nailgun
+--
+
+CREATE SEQUENCE notifications_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.notifications_id_seq OWNER TO nailgun;
+
+--
+-- Name: notifications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nailgun
+--
+
+ALTER SEQUENCE notifications_id_seq OWNED BY notifications.id;
+
+
+--
+-- Name: notifications_id_seq; Type: SEQUENCE SET; Schema: public; Owner: nailgun
+--
+
+SELECT pg_catalog.setval('notifications_id_seq', 7, true);
+
+
+--
+-- Name: plugins; Type: TABLE; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+CREATE TABLE plugins (
+    id integer NOT NULL,
+    type plugin_type NOT NULL,
+    name character varying(128) NOT NULL,
+    state character varying(128) NOT NULL,
+    version character varying(128) NOT NULL
+);
+
+
+ALTER TABLE public.plugins OWNER TO nailgun;
+
+--
+-- Name: plugins_id_seq; Type: SEQUENCE; Schema: public; Owner: nailgun
+--
+
+CREATE SEQUENCE plugins_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.plugins_id_seq OWNER TO nailgun;
+
+--
+-- Name: plugins_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nailgun
+--
+
+ALTER SEQUENCE plugins_id_seq OWNED BY plugins.id;
+
+
+--
+-- Name: plugins_id_seq; Type: SEQUENCE SET; Schema: public; Owner: nailgun
+--
+
+SELECT pg_catalog.setval('plugins_id_seq', 1, false);
+
+
+--
+-- Name: red_hat_accounts; Type: TABLE; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+CREATE TABLE red_hat_accounts (
+    id integer NOT NULL,
+    username character varying(100) NOT NULL,
+    password character varying(100) NOT NULL,
+    license_type license_type NOT NULL,
+    satellite character varying(250),
+    activation_key character varying(300)
+);
+
+
+ALTER TABLE public.red_hat_accounts OWNER TO nailgun;
+
+--
+-- Name: red_hat_accounts_id_seq; Type: SEQUENCE; Schema: public; Owner: nailgun
+--
+
+CREATE SEQUENCE red_hat_accounts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.red_hat_accounts_id_seq OWNER TO nailgun;
+
+--
+-- Name: red_hat_accounts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nailgun
+--
+
+ALTER SEQUENCE red_hat_accounts_id_seq OWNED BY red_hat_accounts.id;
+
+
+--
+-- Name: red_hat_accounts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: nailgun
+--
+
+SELECT pg_catalog.setval('red_hat_accounts_id_seq', 1, false);
+
+
+--
+-- Name: releases; Type: TABLE; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+CREATE TABLE releases (
+    id integer NOT NULL,
+    name character varying(100) NOT NULL,
+    version character varying(30) NOT NULL,
+    description character varying,
+    operating_system character varying(50) NOT NULL,
+    state release_state NOT NULL,
+    networks_metadata text,
+    attributes_metadata text,
+    volumes_metadata text
+);
+
+
+ALTER TABLE public.releases OWNER TO nailgun;
+
+--
+-- Name: releases_id_seq; Type: SEQUENCE; Schema: public; Owner: nailgun
+--
+
+CREATE SEQUENCE releases_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.releases_id_seq OWNER TO nailgun;
+
+--
+-- Name: releases_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nailgun
+--
+
+ALTER SEQUENCE releases_id_seq OWNED BY releases.id;
+
+
+--
+-- Name: releases_id_seq; Type: SEQUENCE SET; Schema: public; Owner: nailgun
+--
+
+SELECT pg_catalog.setval('releases_id_seq', 2, true);
+
+
+--
+-- Name: tasks; Type: TABLE; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+CREATE TABLE tasks (
+    id integer NOT NULL,
+    cluster_id integer,
+    uuid character varying(36) NOT NULL,
+    name task_name NOT NULL,
+    message text,
+    status task_status NOT NULL,
+    progress integer,
+    cache text,
+    result text,
+    parent_id integer,
+    weight double precision
+);
+
+
+ALTER TABLE public.tasks OWNER TO nailgun;
+
+--
+-- Name: tasks_id_seq; Type: SEQUENCE; Schema: public; Owner: nailgun
+--
+
+CREATE SEQUENCE tasks_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.tasks_id_seq OWNER TO nailgun;
+
+--
+-- Name: tasks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nailgun
+--
+
+ALTER SEQUENCE tasks_id_seq OWNED BY tasks.id;
+
+
+--
+-- Name: tasks_id_seq; Type: SEQUENCE SET; Schema: public; Owner: nailgun
+--
+
+SELECT pg_catalog.setval('tasks_id_seq', 13, true);
+
+
+--
+-- Name: vlan; Type: TABLE; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+CREATE TABLE vlan (
+    id integer NOT NULL
+);
+
+
+ALTER TABLE public.vlan OWNER TO nailgun;
+
+--
+-- Name: vlan_id_seq; Type: SEQUENCE; Schema: public; Owner: nailgun
+--
+
+CREATE SEQUENCE vlan_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MAXVALUE
+    NO MINVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.vlan_id_seq OWNER TO nailgun;
+
+--
+-- Name: vlan_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: nailgun
+--
+
+ALTER SEQUENCE vlan_id_seq OWNED BY vlan.id;
+
+
+--
+-- Name: vlan_id_seq; Type: SEQUENCE SET; Schema: public; Owner: nailgun
+--
+
+SELECT pg_catalog.setval('vlan_id_seq', 1, true);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY allowed_networks ALTER COLUMN id SET DEFAULT nextval('allowed_networks_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY attributes ALTER COLUMN id SET DEFAULT nextval('attributes_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY cluster_changes ALTER COLUMN id SET DEFAULT nextval('cluster_changes_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY clusters ALTER COLUMN id SET DEFAULT nextval('clusters_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY ip_addr_ranges ALTER COLUMN id SET DEFAULT nextval('ip_addr_ranges_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY ip_addrs ALTER COLUMN id SET DEFAULT nextval('ip_addrs_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY l2_connections ALTER COLUMN id SET DEFAULT nextval('l2_connections_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY l2_topologies ALTER COLUMN id SET DEFAULT nextval('l2_topologies_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY net_assignments ALTER COLUMN id SET DEFAULT nextval('net_assignments_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY network_groups ALTER COLUMN id SET DEFAULT nextval('network_groups_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY networks ALTER COLUMN id SET DEFAULT nextval('networks_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY node_attributes ALTER COLUMN id SET DEFAULT nextval('node_attributes_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY node_nic_interfaces ALTER COLUMN id SET DEFAULT nextval('node_nic_interfaces_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY nodes ALTER COLUMN id SET DEFAULT nextval('nodes_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY notifications ALTER COLUMN id SET DEFAULT nextval('notifications_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY plugins ALTER COLUMN id SET DEFAULT nextval('plugins_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY red_hat_accounts ALTER COLUMN id SET DEFAULT nextval('red_hat_accounts_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY releases ALTER COLUMN id SET DEFAULT nextval('releases_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY tasks ALTER COLUMN id SET DEFAULT nextval('tasks_id_seq'::regclass);
+
+
+--
+-- Name: id; Type: DEFAULT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY vlan ALTER COLUMN id SET DEFAULT nextval('vlan_id_seq'::regclass);
+
+
+--
+-- Data for Name: allowed_networks; Type: TABLE DATA; Schema: public; Owner: nailgun
+--
+
+COPY allowed_networks (id, network_id, interface_id) FROM stdin;
+1	2	1
+2	3	1
+3	4	1
+4	5	1
+5	6	1
+6	2	2
+7	3	2
+8	4	2
+9	5	2
+10	6	2
+11	2	3
+12	3	3
+13	4	3
+14	5	3
+15	6	3
+\.
+
+
+--
+-- Data for Name: attributes; Type: TABLE DATA; Schema: public; Owner: nailgun
+--
+
+COPY attributes (id, cluster_id, editable, generated) FROM stdin;
+1	1	{"access": {"password": {"value": "admin", "type": "password", "description": "Password for Administrator", "weight": 20, "label": "password"}, "user": {"value": "admin", "type": "text", "description": "Username for Administrator", "weight": 10, "label": "username"}, "tenant": {"value": "admin", "type": "text", "description": "Tenant (project) name for Administrator", "weight": 30, "label": "tenant"}, "email": {"value": "admin@example.org", "type": "text", "description": "Email address for Administrator", "weight": 40, "label": "email"}}, "syslog": {"syslog_port": {"value": "514", "type": "text", "description": "Remote syslog port", "weight": 20, "label": "Port"}, "syslog_transport": {"values": [{"data": "udp", "display_name": "UDP", "description": ""}, {"data": "tcp", "display_name": "TCP", "description": ""}], "type": "radio", "value": "udp", "weight": 30, "label": "Syslog transport protocol"}, "syslog_server": {"value": "", "type": "text", "description": "Remote syslog hostname", "weight": 10, "label": "Hostname"}}, "common": {"auto_assign_floating_ip": {"value": false, "type": "checkbox", "description": "If true, OpenStack will automatically assign a floating IP to a new instance", "weight": 40, "label": "Auto assign floating IP"}, "use_cow_images": {"value": true, "type": "checkbox", "description": "For most cases you will want qcow format. If it's set to false, raw image format will be used to run VMs. OpenStack with raw format currently does not support snapshotting.", "weight": 30, "label": "Use qcow format for images"}, "auth_key": {"value": "", "type": "text", "description": "Public key(s) to include in authorized_keys on deployed nodes", "weight": 60, "label": "Public Key"}, "compute_scheduler_driver": {"values": [{"data": "nova.scheduler.filter_scheduler.FilterScheduler", "display_name": "Filter scheduler", "description": "Currently the most advanced OpenStack scheduler. See the OpenStack documentation for details."}, {"data": "nova.scheduler.simple.SimpleScheduler", "display_name": "Simple scheduler", "description": "This is 'naive' scheduler which tries to find the least loaded host"}], "type": "radio", "value": "nova.scheduler.filter_scheduler.FilterScheduler", "weight": 20, "label": "Scheduler driver"}, "libvirt_type": {"values": [{"data": "kvm", "display_name": "KVM", "description": "Choose this type of hypervisor if you run OpenStack on hardware"}, {"data": "qemu", "display_name": "QEMU", "description": "Choose this type of hypervisor if you run OpenStack on virtual hosts."}], "type": "radio", "value": "qemu", "weight": 10, "label": "Hypervisor type"}, "start_guests_on_host_boot": {"value": true, "type": "checkbox", "description": "Whether to (re-)start guests when the host reboots. If enabled, this option causes guests assigned to the host to be unconditionally restarted when nova-compute starts. If the guest is found to be stopped, it starts. If it is found to be running, it reboots.", "weight": 50, "label": "Start guests on host boot"}}}	{"base_syslog": {"syslog_port": "514", "syslog_server": "10.20.0.2"}, "nova": {"db_password": "nQQ3YuCy", "user_password": "sqe457VR", "state_path": "/var/lib/nova"}, "cobbler": {"profile": "centos-x86_64"}, "rabbit": {"password": "jCMOIAxr"}, "mysql": {"root_password": "VreEZH9F"}, "keystone": {"db_password": "sRxo6Yen", "admin_token": "DXDoen6P"}, "glance": {"db_password": "03m3hVr1", "user_password": "jm37BTsN"}, "cinder": {"db_password": "K6STAxP2", "user_password": "85ESqtp3"}, "swift": {"user_password": "44qRBLH9"}}
+\.
+
+
+--
+-- Data for Name: cluster_changes; Type: TABLE DATA; Schema: public; Owner: nailgun
+--
+
+COPY cluster_changes (id, cluster_id, node_id, name) FROM stdin;
+\.
+
+
+--
+-- Data for Name: clusters; Type: TABLE DATA; Schema: public; Owner: nailgun
+--
+
+COPY clusters (id, mode, status, net_manager, name, release_id) FROM stdin;
+1	multinode	operational	FlatDHCPManager	11	1
+\.
+
+
+--
+-- Data for Name: ip_addr_ranges; Type: TABLE DATA; Schema: public; Owner: nailgun
+--
+
+COPY ip_addr_ranges (id, network_group_id, first, last) FROM stdin;
+1	1	10.20.0.129	10.20.0.254
+2	2	172.16.0.2	172.16.0.254
+3	3	172.16.1.2	172.16.1.254
+4	4	192.168.0.2	192.168.0.254
+5	5	192.168.1.2	192.168.1.254
+6	6	10.0.0.2	10.0.0.254
+\.
+
+
+--
+-- Data for Name: ip_addrs; Type: TABLE DATA; Schema: public; Owner: nailgun
+--
+
+COPY ip_addrs (id, network, node, ip_addr) FROM stdin;
+1	1	1	10.20.0.129
+2	1	1	10.20.0.130
+3	1	1	10.20.0.131
+4	4	1	192.168.0.2
+5	3	1	172.16.1.2
+6	5	1	192.168.1.2
+\.
+
+
+--
+-- Data for Name: l2_connections; Type: TABLE DATA; Schema: public; Owner: nailgun
+--
+
+COPY l2_connections (id, topology_id, interface_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: l2_topologies; Type: TABLE DATA; Schema: public; Owner: nailgun
+--
+
+COPY l2_topologies (id, network_id) FROM stdin;
+\.
+
+
+--
+-- Data for Name: net_assignments; Type: TABLE DATA; Schema: public; Owner: nailgun
+--
+
+COPY net_assignments (id, network_id, interface_id) FROM stdin;
+1	2	3
+2	3	3
+3	4	3
+4	5	3
+5	6	3
+\.
+
+
+--
+-- Data for Name: network_groups; Type: TABLE DATA; Schema: public; Owner: nailgun
+--
+
+COPY network_groups (id, name, access, release, cluster_id, network_size, amount, vlan_start, cidr, gateway, netmask) FROM stdin;
+1	fuelweb_admin	admin	\N	\N	256	1	1	10.20.0.0/24	\N	255.255.255.0
+2	floating	public	1	1	256	1	100	172.16.0.0/24	172.16.0.1	255.255.255.0
+3	public	public	1	1	256	1	100	172.16.1.0/24	172.16.1.1	255.255.255.0
+4	management	private192	1	1	256	1	101	192.168.0.0/24	192.168.0.1	255.255.255.0
+5	storage	private192	1	1	256	1	102	192.168.1.0/24	192.168.1.1	255.255.255.0
+6	fixed	private10	1	1	256	1	103	10.0.0.0/24	10.0.0.1	255.255.255.0
+\.
+
+
+--
+-- Data for Name: networks; Type: TABLE DATA; Schema: public; Owner: nailgun
+--
+
+COPY networks (id, release, name, access, vlan_id, network_group_id, cidr, gateway) FROM stdin;
+1	\N	fuelweb_admin	admin	1	1	10.20.0.0/24	\N
+2	1	floating	public	100	2	172.16.0.0/24	172.16.0.1
+3	1	public	public	100	3	172.16.1.0/24	172.16.1.1
+4	1	management	private192	101	4	192.168.0.0/24	192.168.0.1
+5	1	storage	private192	102	5	192.168.1.0/24	192.168.1.1
+6	1	fixed	private10	103	6	10.0.0.0/24	10.0.0.1
+\.
+
+
+--
+-- Data for Name: node_attributes; Type: TABLE DATA; Schema: public; Owner: nailgun
+--
+
+COPY node_attributes (id, node_id, volumes, interfaces) FROM stdin;
+1	1	[{"name": "sda", "type": "disk", "id": "disk/by-path/pci-0000:00:0d.0-scsi-0:0:0:0", "volumes": [{"type": "boot", "size": 300}, {"mount": "/boot", "type": "raid", "size": 200}, {"type": "lvm_meta", "name": "os", "size": 64}, {"vg": "os", "type": "pv", "size": 11264}, {"type": "lvm_meta", "name": "image", "size": 64}, {"vg": "image", "type": "pv", "size": 4492}], "size": 16384}, {"name": "sdb", "type": "disk", "id": "disk/by-path/pci-0000:00:0d.0-scsi-1:0:0:0", "volumes": [{"type": "boot", "size": 300}, {"mount": "/boot", "type": "raid", "size": 200}, {"type": "lvm_meta", "name": "os", "size": 64}, {"vg": "os", "type": "pv", "size": 0}, {"type": "lvm_meta", "name": "image", "size": 64}, {"vg": "image", "type": "pv", "size": 32140}], "size": 32768}, {"name": "sdc", "type": "disk", "id": "disk/by-path/pci-0000:00:0d.0-scsi-2:0:0:0", "volumes": [{"type": "boot", "size": 300}, {"mount": "/boot", "type": "raid", "size": 200}, {"type": "lvm_meta", "name": "os", "size": 64}, {"vg": "os", "type": "pv", "size": 0}, {"type": "lvm_meta", "name": "image", "size": 64}, {"vg": "image", "type": "pv", "size": 64908}], "size": 65536}, {"min_size": 11264, "type": "vg", "id": "os", "volumes": [{"mount": "/", "type": "lv", "name": "root", "size": 10048}, {"mount": "swap", "type": "lv", "name": "swap", "size": 1024}], "label": "Base System"}, {"min_size": 5120, "type": "vg", "id": "image", "volumes": [{"mount": "/var/lib/glance", "type": "lv", "name": "glance", "size": 101348}], "label": "Image Storage"}]	{}
+2	2	[{"size": 16384, "type": "disk", "id": "disk/by-path/pci-0000:00:0d.0-scsi-0:0:0:0", "volumes": [{"type": "boot", "size": 300}, {"mount": "/boot", "type": "raid", "size": 200}], "name": "sda"}, {"size": 32768, "type": "disk", "id": "disk/by-path/pci-0000:00:0d.0-scsi-1:0:0:0", "volumes": [{"type": "boot", "size": 300}, {"mount": "/boot", "type": "raid", "size": 200}], "name": "sdb"}, {"size": 65536, "type": "disk", "id": "disk/by-path/pci-0000:00:0d.0-scsi-2:0:0:0", "volumes": [{"type": "boot", "size": 300}, {"mount": "/boot", "type": "raid", "size": 200}], "name": "sdc"}]	{}
+\.
+
+
+--
+-- Data for Name: node_nic_interfaces; Type: TABLE DATA; Schema: public; Owner: nailgun
+--
+
+COPY node_nic_interfaces (id, node_id, name, mac, max_speed, current_speed) FROM stdin;
+1	1	eth2	08:00:27:37:9F:EB	1000	1000
+2	1	eth1	08:00:27:64:C7:95	1000	1000
+3	1	eth0	08:00:27:5F:01:03	1000	1000
+4	2	eth2	08:00:27:3D:76:42	1000	1000
+5	2	eth1	08:00:27:99:19:A9	1000	1000
+6	2	eth0	08:00:27:B3:B1:05	1000	1000
+\.
+
+
+--
+-- Data for Name: nodes; Type: TABLE DATA; Schema: public; Owner: nailgun
+--
+
+COPY nodes (id, cluster_id, name, status, meta, mac, ip, fqdn, manufacturer, platform_name, progress, os_platform, role, pending_addition, pending_deletion, error_type, error_msg, "timestamp", online) FROM stdin;
+2	\N	Untitled (B1:05)	discover	{"system": {"serial": "0", "version": "1.2", "fqdn": "bootstrap", "family": "Virtual Machine", "manufacturer": "VirtualBox"}, "interfaces": [{"mac": "08:00:27:3D:76:42", "max_speed": 1000, "name": "eth2", "current_speed": 1000}, {"mac": "08:00:27:99:19:A9", "max_speed": 1000, "name": "eth1", "current_speed": 1000}, {"name": "eth0", "ip": "10.20.0.70", "netmask": "255.255.255.0", "mac": "08:00:27:B3:B1:05", "max_speed": 1000, "current_speed": 1000}], "disks": [{"model": "VBOX HARDDISK", "disk": "disk/by-path/pci-0000:00:0d.0-scsi-2:0:0:0", "name": "sdc", "size": 68719476736}, {"model": "VBOX HARDDISK", "disk": "disk/by-path/pci-0000:00:0d.0-scsi-0:0:0:0", "name": "sda", "size": 17179869184}, {"model": "VBOX HARDDISK", "disk": "disk/by-path/pci-0000:00:0d.0-scsi-1:0:0:0", "name": "sdb", "size": 34359738368}], "cpu": {"real": 0, "total": 1, "spec": [{"model": "Pentium(R) Dual-Core CPU E6700 @ 3.20GHz", "frequency": 0}]}, "memory": {"total": 1045000192}}	08:00:27:B3:B1:05	10.20.0.70	compute-2.domain.tld	VirtualBox	\N	0	centos	\N	f	f	\N	\N	2013-08-16 05:18:06.260408	f
+1	1	Untitled (01:03)	ready	{"system": {"serial": "0", "version": "1.2", "fqdn": "controller-1.domain.tld", "family": "Virtual Machine", "manufacturer": "VirtualBox"}, "interfaces": [{"mac": "08:00:27:37:9F:EB", "max_speed": 1000, "name": "eth2", "current_speed": 1000}, {"mac": "08:00:27:64:C7:95", "max_speed": 1000, "name": "eth1", "current_speed": 1000}, {"name": "eth0", "ip": "10.20.0.131", "mac": "08:00:27:5F:01:03", "netmask": "255.255.255.0", "max_speed": 1000, "current_speed": 1000}], "disks": [{"model": "VBOX HARDDISK", "disk": "disk/by-path/pci-0000:00:0d.0-scsi-2:0:0:0", "name": "sdc", "size": 68719476736}, {"model": "VBOX HARDDISK", "disk": "disk/by-path/pci-0000:00:0d.0-scsi-1:0:0:0", "name": "sdb", "size": 34359738368}, {"model": "VBOX HARDDISK", "disk": "disk/by-path/pci-0000:00:0d.0-scsi-0:0:0:0", "name": "sda", "size": 17179869184}], "cpu": {"real": 0, "total": 1, "spec": [{"model": "Pentium(R) Dual-Core CPU E6700 @ 3.20GHz", "frequency": 3180}]}, "memory": {"total": 778661888}}	08:00:27:5F:01:03	10.20.0.131	controller-1.domain.tld	VirtualBox	\N	100	centos	controller	f	f	\N	\N	2013-08-16 15:44:04.055538	t
+\.
+
+
+--
+-- Data for Name: notifications; Type: TABLE DATA; Schema: public; Owner: nailgun
+--
+
+COPY notifications (id, cluster_id, node_id, task_id, topic, message, status, datetime) FROM stdin;
+1	\N	\N	\N	done	Master node installation has been completed successfully. Now you can boot new nodes over PXE, they will be discovered and become available for installing OpenStack on them	read	2013-08-16 04:19:38.592141
+2	\N	1	\N	discover	New node is discovered: 1 CPUs / 0.7 GB RAM / 0.12 TB HDD 	read	2013-08-16 04:26:04.150541
+3	\N	2	\N	discover	New node is discovered: 1 CPUs / 1.0 GB RAM / 0.12 TB HDD 	read	2013-08-16 04:26:09.229308
+4	\N	2	\N	error	Node 'Untitled (B1:05)' has gone away	unread	2013-08-16 04:53:30.763405
+5	\N	2	\N	discover	Node 'Untitled (B1:05)' is back online	unread	2013-08-16 04:59:45.248445
+6	\N	2	\N	error	Node 'Untitled (B1:05)' has gone away	unread	2013-08-16 05:21:33.764525
+7	1	\N	\N	done	Deployment of environment '11' is done. Access the OpenStack dashboard (Horizon) at http://172.16.1.2/ or via internal network at http://10.20.0.131/	unread	2013-08-16 05:29:41.32342
+\.
+
+
+--
+-- Data for Name: plugins; Type: TABLE DATA; Schema: public; Owner: nailgun
+--
+
+COPY plugins (id, type, name, state, version) FROM stdin;
+\.
+
+
+--
+-- Data for Name: red_hat_accounts; Type: TABLE DATA; Schema: public; Owner: nailgun
+--
+
+COPY red_hat_accounts (id, username, password, license_type, satellite, activation_key) FROM stdin;
+\.
+
+
+--
+-- Data for Name: releases; Type: TABLE DATA; Schema: public; Owner: nailgun
+--
+
+COPY releases (id, name, version, description, operating_system, state, networks_metadata, attributes_metadata, volumes_metadata) FROM stdin;
+1	Grizzly on CentOS 6.4	2013.1.2	This option will install the OpenStack Grizzly packages using CentOS as a base operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment.	CentOS	available	[{"access": "public", "name": "floating"}, {"access": "public", "name": "public"}, {"access": "private192", "name": "management"}, {"access": "private192", "name": "storage"}, {"access": "private10", "name": "fixed"}]	{"generated": {"base_syslog": {"syslog_port": {"generator": "identical", "generator_arg": "514"}, "syslog_server": {"generator": "ip", "generator_arg": "admin"}}, "cobbler": {"profile": {"generator": "identical", "generator_arg": "centos-x86_64"}}, "nova": {"db_password": {"generator": "password"}, "user_password": {"generator": "password"}, "state_path": "/var/lib/nova"}, "keystone": {"db_password": {"generator": "password"}, "admin_token": {"generator": "password"}}, "rabbit": {"password": {"generator": "password"}}, "mysql": {"root_password": {"generator": "password"}}, "cinder": {"db_password": {"generator": "password"}, "user_password": {"generator": "password"}}, "glance": {"db_password": {"generator": "password"}, "user_password": {"generator": "password"}}, "swift": {"user_password": {"generator": "password"}}}, "editable": {"access": {"password": {"weight": 20, "type": "password", "description": "Password for Administrator", "value": "admin", "label": "password"}, "user": {"weight": 10, "type": "text", "description": "Username for Administrator", "value": "admin", "label": "username"}, "tenant": {"weight": 30, "type": "text", "description": "Tenant (project) name for Administrator", "value": "admin", "label": "tenant"}, "email": {"weight": 40, "type": "text", "description": "Email address for Administrator", "value": "admin@example.org", "label": "email"}}, "syslog": {"syslog_port": {"weight": 20, "type": "text", "description": "Remote syslog port", "value": "514", "label": "Port"}, "syslog_transport": {"type": "radio", "values": [{"display_name": "UDP", "data": "udp", "description": ""}, {"display_name": "TCP", "data": "tcp", "description": ""}], "weight": 30, "value": "udp", "label": "Syslog transport protocol"}, "syslog_server": {"weight": 10, "type": "text", "description": "Remote syslog hostname", "value": "", "label": "Hostname"}}, "common": {"auto_assign_floating_ip": {"weight": 40, "type": "checkbox", "description": "If true, OpenStack will automatically assign a floating IP to a new instance", "value": false, "label": "Auto assign floating IP"}, "use_cow_images": {"weight": 30, "type": "checkbox", "description": "For most cases you will want qcow format. If it's set to false, raw image format will be used to run VMs. OpenStack with raw format currently does not support snapshotting.", "value": true, "label": "Use qcow format for images"}, "auth_key": {"weight": 60, "type": "text", "description": "Public key(s) to include in authorized_keys on deployed nodes", "value": "", "label": "Public Key"}, "compute_scheduler_driver": {"type": "radio", "values": [{"display_name": "Filter scheduler", "data": "nova.scheduler.filter_scheduler.FilterScheduler", "description": "Currently the most advanced OpenStack scheduler. See the OpenStack documentation for details."}, {"display_name": "Simple scheduler", "data": "nova.scheduler.simple.SimpleScheduler", "description": "This is 'naive' scheduler which tries to find the least loaded host"}], "weight": 20, "value": "nova.scheduler.filter_scheduler.FilterScheduler", "label": "Scheduler driver"}, "libvirt_type": {"type": "radio", "values": [{"display_name": "KVM", "data": "kvm", "description": "Choose this type of hypervisor if you run OpenStack on hardware"}, {"display_name": "QEMU", "data": "qemu", "description": "Choose this type of hypervisor if you run OpenStack on virtual hosts."}], "weight": 10, "value": "qemu", "label": "Hypervisor type"}, "start_guests_on_host_boot": {"weight": 50, "type": "checkbox", "description": "Whether to (re-)start guests when the host reboots. If enabled, this option causes guests assigned to the host to be unconditionally restarted when nova-compute starts. If the guest is found to be stopped, it starts. If it is found to be running, it reboots.", "value": true, "label": "Start guests on host boot"}}}}	{"volumes_roles_mapping": {"cinder": ["os", "cinder"], "controller": ["os", "image"], "compute": ["os", "vm"]}, "volumes": [{"min_size": {"generator": "calc_min_os_size"}, "type": "vg", "id": "os", "volumes": [{"mount": "/", "type": "lv", "name": "root", "size": {"generator": "calc_total_root_vg"}}, {"mount": "swap", "type": "lv", "name": "swap", "size": {"generator": "calc_swap_size"}}], "label": "Base System"}, {"min_size": {"generator": "calc_min_vm_size"}, "type": "vg", "id": "vm", "volumes": [{"mount": "/var/lib/nova", "type": "lv", "name": "nova", "size": {"generator_args": ["vm"], "generator": "calc_total_vg"}}], "label": "Virtual Storage"}, {"min_size": {"generator": "calc_min_glance_size"}, "type": "vg", "id": "image", "volumes": [{"mount": "/var/lib/glance", "type": "lv", "name": "glance", "size": {"generator_args": ["image"], "generator": "calc_total_vg"}}], "label": "Image Storage"}, {"min_size": {"generator": "calc_min_cinder_size"}, "type": "vg", "id": "cinder", "volumes": [], "label": "Cinder"}]}
+2	RHOS 3.0 for RHEL 6.4	2013.1.2	This option will install the Red Hat Enterprise Linux OpenStack Platform using RHEL as a base operating system.  With high availability features built in, you are getting a robust enterprise-grade OpenStack deployment.	RHEL	not_available	[{"access": "public", "name": "floating"}, {"access": "public", "name": "public"}, {"access": "private192", "name": "management"}, {"access": "private192", "name": "storage"}, {"access": "private10", "name": "fixed"}]	{"generated": {"base_syslog": {"syslog_port": {"generator": "identical", "generator_arg": "514"}, "syslog_server": {"generator": "ip", "generator_arg": "admin"}}, "cobbler": {"profile": {"generator": "identical", "generator_arg": "rhel-x86_64"}}, "nova": {"db_password": {"generator": "password"}, "user_password": {"generator": "password"}, "state_path": "/var/lib/nova"}, "keystone": {"db_password": {"generator": "password"}, "admin_token": {"generator": "password"}}, "rabbit": {"password": {"generator": "password"}}, "mysql": {"root_password": {"generator": "password"}}, "cinder": {"db_password": {"generator": "password"}, "user_password": {"generator": "password"}}, "glance": {"db_password": {"generator": "password"}, "user_password": {"generator": "password"}}, "swift": {"user_password": {"generator": "password"}}}, "editable": {"access": {"password": {"weight": 20, "type": "password", "description": "Password for Administrator", "value": "admin", "label": "password"}, "user": {"weight": 10, "type": "text", "description": "Username for Administrator", "value": "admin", "label": "username"}, "tenant": {"weight": 30, "type": "text", "description": "Tenant (project) name for Administrator", "value": "admin", "label": "tenant"}, "email": {"weight": 40, "type": "text", "description": "Email address for Administrator", "value": "admin@example.org", "label": "email"}}, "syslog": {"syslog_port": {"weight": 20, "type": "text", "description": "Remote syslog port", "value": "514", "label": "Port"}, "syslog_transport": {"type": "radio", "values": [{"display_name": "UDP", "data": "udp", "description": ""}, {"display_name": "TCP", "data": "tcp", "description": ""}], "weight": 30, "value": "udp", "label": "Syslog transport protocol"}, "syslog_server": {"weight": 10, "type": "text", "description": "Remote syslog hostname", "value": "", "label": "Hostname"}}, "common": {"auto_assign_floating_ip": {"weight": 40, "type": "checkbox", "description": "If true, OpenStack will automatically assign a floating IP to a new instance", "value": false, "label": "Auto assign floating IP"}, "use_cow_images": {"weight": 30, "type": "checkbox", "description": "For most cases you will want qcow format. If it's set to false, raw image format will be used to run VMs. OpenStack with raw format currently does not support snapshotting.", "value": true, "label": "Use qcow format for images"}, "auth_key": {"weight": 60, "type": "text", "description": "Public key(s) to include in authorized_keys on deployed nodes", "value": "", "label": "Public Key"}, "compute_scheduler_driver": {"type": "radio", "values": [{"display_name": "Filter scheduler", "data": "nova.scheduler.filter_scheduler.FilterScheduler", "description": "Currently the most advanced OpenStack scheduler. See the OpenStack documentation for details."}, {"display_name": "Simple scheduler", "data": "nova.scheduler.simple.SimpleScheduler", "description": "This is 'naive' scheduler which tries to find the least loaded host"}], "weight": 20, "value": "nova.scheduler.filter_scheduler.FilterScheduler", "label": "Scheduler driver"}, "libvirt_type": {"type": "radio", "values": [{"display_name": "KVM", "data": "kvm", "description": "Choose this type of hypervisor if you run OpenStack on hardware"}, {"display_name": "QEMU", "data": "qemu", "description": "Choose this type of hypervisor if you run OpenStack on virtual hosts."}], "weight": 10, "value": "qemu", "label": "Hypervisor type"}, "start_guests_on_host_boot": {"weight": 50, "type": "checkbox", "description": "Whether to (re-)start guests when the host reboots. If enabled, this option causes guests assigned to the host to be unconditionally restarted when nova-compute starts. If the guest is found to be stopped, it starts. If it is found to be running, it reboots.", "value": true, "label": "Start guests on host boot"}}}}	{"volumes_roles_mapping": {"cinder": ["os", "cinder"], "controller": ["os", "image"], "compute": ["os", "vm"]}, "volumes": [{"min_size": {"generator": "calc_min_os_size"}, "type": "vg", "id": "os", "volumes": [{"mount": "/", "type": "lv", "name": "root", "size": {"generator": "calc_total_root_vg"}}, {"mount": "swap", "type": "lv", "name": "swap", "size": {"generator": "calc_swap_size"}}], "label": "Base System"}, {"min_size": {"generator": "calc_min_vm_size"}, "type": "vg", "id": "vm", "volumes": [{"mount": "/var/lib/nova", "type": "lv", "name": "nova", "size": {"generator_args": ["vm"], "generator": "calc_total_vg"}}], "label": "Virtual Storage"}, {"min_size": {"generator": "calc_min_glance_size"}, "type": "vg", "id": "image", "volumes": [{"mount": "/var/lib/glance", "type": "lv", "name": "glance", "size": {"generator_args": ["image"], "generator": "calc_total_vg"}}], "label": "Image Storage"}, {"min_size": {"generator": "calc_min_cinder_size"}, "type": "vg", "id": "cinder", "volumes": [], "label": "Cinder"}]}
+\.
+
+
+--
+-- Data for Name: tasks; Type: TABLE DATA; Schema: public; Owner: nailgun
+--
+
+COPY tasks (id, cluster_id, uuid, name, message, status, progress, cache, result, parent_id, weight) FROM stdin;
+9	1	af80c867-4b2d-4062-9568-1558ccadcad9	deploy	Deployment of environment '11' is done. Access the OpenStack dashboard (Horizon) at http://172.16.1.2/ or via internal network at http://10.20.0.131/	ready	100	{}	{}	\N	1
+12	1	5f8ade7f-85a2-44e1-9026-03993b2aa45c	provision	\N	ready	100	{"respond_to": "provision_resp", "method": "provision", "args": {"engine": {"url": "http://localhost/cobbler_api", "username": "cobbler", "password": "cobbler"}, "task_uuid": "5f8ade7f-85a2-44e1-9026-03993b2aa45c", "nodes": [{"profile": "centos-x86_64", "name_servers_search": "\\"domain.tld\\"", "ks_meta": {"mco_enable": 1, "mco_vhost": "mcollective", "mco_pskey": "unset", "ks_spaces": "\\"[{\\\\\\"size\\\\\\": 16384, \\\\\\"type\\\\\\": \\\\\\"disk\\\\\\", \\\\\\"name\\\\\\": \\\\\\"sda\\\\\\", \\\\\\"volumes\\\\\\": [{\\\\\\"type\\\\\\": \\\\\\"boot\\\\\\", \\\\\\"size\\\\\\": 300}, {\\\\\\"mount\\\\\\": \\\\\\"/boot\\\\\\", \\\\\\"type\\\\\\": \\\\\\"raid\\\\\\", \\\\\\"size\\\\\\": 200}, {\\\\\\"type\\\\\\": \\\\\\"lvm_meta\\\\\\", \\\\\\"name\\\\\\": \\\\\\"os\\\\\\", \\\\\\"size\\\\\\": 64}, {\\\\\\"size\\\\\\": 11264, \\\\\\"type\\\\\\": \\\\\\"pv\\\\\\", \\\\\\"vg\\\\\\": \\\\\\"os\\\\\\"}, {\\\\\\"type\\\\\\": \\\\\\"lvm_meta\\\\\\", \\\\\\"name\\\\\\": \\\\\\"image\\\\\\", \\\\\\"size\\\\\\": 64}, {\\\\\\"size\\\\\\": 4492, \\\\\\"type\\\\\\": \\\\\\"pv\\\\\\", \\\\\\"vg\\\\\\": \\\\\\"image\\\\\\"}], \\\\\\"id\\\\\\": \\\\\\"disk/by-path/pci-0000:00:0d.0-scsi-0:0:0:0\\\\\\"}, {\\\\\\"size\\\\\\": 32768, \\\\\\"type\\\\\\": \\\\\\"disk\\\\\\", \\\\\\"name\\\\\\": \\\\\\"sdb\\\\\\", \\\\\\"volumes\\\\\\": [{\\\\\\"type\\\\\\": \\\\\\"boot\\\\\\", \\\\\\"size\\\\\\": 300}, {\\\\\\"mount\\\\\\": \\\\\\"/boot\\\\\\", \\\\\\"type\\\\\\": \\\\\\"raid\\\\\\", \\\\\\"size\\\\\\": 200}, {\\\\\\"type\\\\\\": \\\\\\"lvm_meta\\\\\\", \\\\\\"name\\\\\\": \\\\\\"os\\\\\\", \\\\\\"size\\\\\\": 64}, {\\\\\\"size\\\\\\": 0, \\\\\\"type\\\\\\": \\\\\\"pv\\\\\\", \\\\\\"vg\\\\\\": \\\\\\"os\\\\\\"}, {\\\\\\"type\\\\\\": \\\\\\"lvm_meta\\\\\\", \\\\\\"name\\\\\\": \\\\\\"image\\\\\\", \\\\\\"size\\\\\\": 64}, {\\\\\\"size\\\\\\": 32140, \\\\\\"type\\\\\\": \\\\\\"pv\\\\\\", \\\\\\"vg\\\\\\": \\\\\\"image\\\\\\"}], \\\\\\"id\\\\\\": \\\\\\"disk/by-path/pci-0000:00:0d.0-scsi-1:0:0:0\\\\\\"}, {\\\\\\"size\\\\\\": 65536, \\\\\\"type\\\\\\": \\\\\\"disk\\\\\\", \\\\\\"name\\\\\\": \\\\\\"sdc\\\\\\", \\\\\\"volumes\\\\\\": [{\\\\\\"type\\\\\\": \\\\\\"boot\\\\\\", \\\\\\"size\\\\\\": 300}, {\\\\\\"mount\\\\\\": \\\\\\"/boot\\\\\\", \\\\\\"type\\\\\\": \\\\\\"raid\\\\\\", \\\\\\"size\\\\\\": 200}, {\\\\\\"type\\\\\\": \\\\\\"lvm_meta\\\\\\", \\\\\\"name\\\\\\": \\\\\\"os\\\\\\", \\\\\\"size\\\\\\": 64}, {\\\\\\"size\\\\\\": 0, \\\\\\"type\\\\\\": \\\\\\"pv\\\\\\", \\\\\\"vg\\\\\\": \\\\\\"os\\\\\\"}, {\\\\\\"type\\\\\\": \\\\\\"lvm_meta\\\\\\", \\\\\\"name\\\\\\": \\\\\\"image\\\\\\", \\\\\\"size\\\\\\": 64}, {\\\\\\"size\\\\\\": 64908, \\\\\\"type\\\\\\": \\\\\\"pv\\\\\\", \\\\\\"vg\\\\\\": \\\\\\"image\\\\\\"}], \\\\\\"id\\\\\\": \\\\\\"disk/by-path/pci-0000:00:0d.0-scsi-2:0:0:0\\\\\\"}, {\\\\\\"min_size\\\\\\": 11264, \\\\\\"type\\\\\\": \\\\\\"vg\\\\\\", \\\\\\"id\\\\\\": \\\\\\"os\\\\\\", \\\\\\"volumes\\\\\\": [{\\\\\\"mount\\\\\\": \\\\\\"/\\\\\\", \\\\\\"type\\\\\\": \\\\\\"lv\\\\\\", \\\\\\"name\\\\\\": \\\\\\"root\\\\\\", \\\\\\"size\\\\\\": 10048}, {\\\\\\"mount\\\\\\": \\\\\\"swap\\\\\\", \\\\\\"type\\\\\\": \\\\\\"lv\\\\\\", \\\\\\"name\\\\\\": \\\\\\"swap\\\\\\", \\\\\\"size\\\\\\": 1024}], \\\\\\"label\\\\\\": \\\\\\"Base System\\\\\\"}, {\\\\\\"min_size\\\\\\": 5120, \\\\\\"type\\\\\\": \\\\\\"vg\\\\\\", \\\\\\"id\\\\\\": \\\\\\"image\\\\\\", \\\\\\"volumes\\\\\\": [{\\\\\\"mount\\\\\\": \\\\\\"/var/lib/glance\\\\\\", \\\\\\"type\\\\\\": \\\\\\"lv\\\\\\", \\\\\\"name\\\\\\": \\\\\\"glance\\\\\\", \\\\\\"size\\\\\\": 101348}], \\\\\\"label\\\\\\": \\\\\\"Image Storage\\\\\\"}]\\"", "mco_user": "mcollective", "puppet_enable": 0, "install_log_2_syslog": 1, "mco_password": "marionette", "puppet_auto_setup": 1, "puppet_master": "fuel.domain.tld", "mco_auto_setup": 1, "auth_key": "\\"\\"", "puppet_version": "2.7.19", "mco_connector": "rabbitmq", "mco_host": "10.20.0.2"}, "interfaces": {"eth2": {"ip_address": "10.20.0.129", "netmask": "255.255.255.0", "static": "0", "mac_address": "08:00:27:37:9F:EB"}, "eth1": {"ip_address": "10.20.0.130", "netmask": "255.255.255.0", "static": "0", "mac_address": "08:00:27:64:C7:95"}, "eth0": {"ip_address": "10.20.0.131", "netmask": "255.255.255.0", "dns_name": "controller-1.domain.tld", "static": "0", "mac_address": "08:00:27:5F:01:03"}}, "interfaces_extra": {"eth2": {"onboot": "no", "peerdns": "no"}, "eth1": {"onboot": "no", "peerdns": "no"}, "eth0": {"onboot": "yes", "peerdns": "no"}}, "power_type": "ssh", "power_user": "root", "power_address": "10.20.0.68", "name_servers": "\\"10.20.0.2\\"", "name": "controller-1", "hostname": "controller-1.domain.tld", "power_pass": "/root/.ssh/id_rsa", "netboot_enabled": "1"}]}}	{}	9	0.050000000000000003
+13	1	8be01fa3-4dd0-487b-aac2-3cb32dfe5168	deployment	Deployment of environment '11' is done. Access the OpenStack dashboard (Horizon) at http://172.16.1.2/ or via internal network at http://10.20.0.131/	ready	100	{"respond_to": "deploy_resp", "method": "deploy", "args": {"attributes": {"use_cow_images": true, "syslog": {"syslog_port": "514", "syslog_transport": "udp", "syslog_server": ""}, "libvirt_type": "qemu", "cobbler": {"profile": "centos-x86_64"}, "controller_nodes": [{"status": "provisioning", "uid": 1, "ip": "10.20.0.68", "mac": "08:00:27:5F:01:03", "meta": {"memory": {"total": 778661888}, "interfaces": [{"mac": "08:00:27:37:9F:EB", "max_speed": 1000, "name": "eth2", "current_speed": 1000}, {"mac": "08:00:27:64:C7:95", "max_speed": 1000, "name": "eth1", "current_speed": 1000}, {"name": "eth0", "ip": "10.20.0.68", "netmask": "255.255.255.0", "mac": "08:00:27:5F:01:03", "max_speed": 1000, "current_speed": 1000}], "disks": [{"model": "VBOX HARDDISK", "disk": "disk/by-path/pci-0000:00:0d.0-scsi-2:0:0:0", "name": "sdc", "size": 68719476736}, {"model": "VBOX HARDDISK", "disk": "disk/by-path/pci-0000:00:0d.0-scsi-1:0:0:0", "name": "sdb", "size": 34359738368}, {"model": "VBOX HARDDISK", "disk": "disk/by-path/pci-0000:00:0d.0-scsi-0:0:0:0", "name": "sda", "size": 17179869184}], "system": {"serial": "0", "version": "1.2", "fqdn": "bootstrap", "family": "Virtual Machine", "manufacturer": "VirtualBox"}, "cpu": {"real": 0, "total": 1, "spec": [{"model": "Pentium(R) Dual-Core CPU E6700 @ 3.20GHz", "frequency": 3180}]}}, "id": 1, "error_type": null, "fqdn": "controller-1.domain.tld", "network_data": [{"name": "management", "ip": "192.168.0.2/24", "vlan": 101, "dev": "eth0", "netmask": "255.255.255.0", "brd": "192.168.0.255", "gateway": "192.168.0.1"}, {"name": "public", "ip": "172.16.1.2/24", "vlan": 100, "dev": "eth0", "netmask": "255.255.255.0", "brd": "172.16.1.255", "gateway": "172.16.1.1"}, {"name": "storage", "ip": "192.168.1.2/24", "vlan": 102, "dev": "eth0", "netmask": "255.255.255.0", "brd": "192.168.1.255", "gateway": "192.168.1.1"}, {"vlan": 100, "name": "floating", "dev": "eth0"}, {"vlan": 103, "name": "fixed", "dev": "eth0"}, {"name": "admin", "dev": "eth0"}], "role": "controller", "online": true, "progress": 0}], "mysql": {"root_password": "VreEZH9F"}, "glance": {"db_password": "03m3hVr1", "user_password": "jm37BTsN"}, "swift": {"user_password": "44qRBLH9"}, "fixed_network_range": "10.0.0.0/24", "nova": {"db_password": "nQQ3YuCy", "user_password": "sqe457VR", "state_path": "/var/lib/nova"}, "master_ip": "10.20.0.2", "access": {"password": "admin", "user": "admin", "tenant": "admin", "email": "admin@example.org"}, "keystone": {"db_password": "sRxo6Yen", "admin_token": "DXDoen6P"}, "novanetwork_parameters": {"network_manager": "FlatDHCPManager", "network_size": 256}, "auto_assign_floating_ip": false, "start_guests_on_host_boot": true, "rabbit": {"password": "jCMOIAxr"}, "management_network_range": "192.168.0.0/24", "base_syslog": {"syslog_port": "514", "syslog_server": "10.20.0.2"}, "storage_network_range": "192.168.1.0/24", "floating_network_range": ["172.16.0.2-172.16.0.254"], "auth_key": "", "compute_scheduler_driver": "nova.scheduler.filter_scheduler.FilterScheduler", "deployment_mode": "multinode", "cinder": {"db_password": "K6STAxP2", "user_password": "85ESqtp3"}, "deployment_id": 1}, "task_uuid": "8be01fa3-4dd0-487b-aac2-3cb32dfe5168", "nodes": [{"status": "provisioning", "uid": 1, "ip": "10.20.0.68", "mac": "08:00:27:5F:01:03", "meta": {"memory": {"total": 778661888}, "interfaces": [{"mac": "08:00:27:37:9F:EB", "max_speed": 1000, "name": "eth2", "current_speed": 1000}, {"mac": "08:00:27:64:C7:95", "max_speed": 1000, "name": "eth1", "current_speed": 1000}, {"name": "eth0", "ip": "10.20.0.68", "netmask": "255.255.255.0", "mac": "08:00:27:5F:01:03", "max_speed": 1000, "current_speed": 1000}], "disks": [{"model": "VBOX HARDDISK", "disk": "disk/by-path/pci-0000:00:0d.0-scsi-2:0:0:0", "name": "sdc", "size": 68719476736}, {"model": "VBOX HARDDISK", "disk": "disk/by-path/pci-0000:00:0d.0-scsi-1:0:0:0", "name": "sdb", "size": 34359738368}, {"model": "VBOX HARDDISK", "disk": "disk/by-path/pci-0000:00:0d.0-scsi-0:0:0:0", "name": "sda", "size": 17179869184}], "system": {"serial": "0", "version": "1.2", "fqdn": "bootstrap", "family": "Virtual Machine", "manufacturer": "VirtualBox"}, "cpu": {"real": 0, "total": 1, "spec": [{"model": "Pentium(R) Dual-Core CPU E6700 @ 3.20GHz", "frequency": 3180}]}}, "id": 1, "error_type": null, "fqdn": "controller-1.domain.tld", "network_data": [{"name": "management", "ip": "192.168.0.2/24", "vlan": 101, "dev": "eth0", "netmask": "255.255.255.0", "brd": "192.168.0.255", "gateway": "192.168.0.1"}, {"name": "public", "ip": "172.16.1.2/24", "vlan": 100, "dev": "eth0", "netmask": "255.255.255.0", "brd": "172.16.1.255", "gateway": "172.16.1.1"}, {"name": "storage", "ip": "192.168.1.2/24", "vlan": 102, "dev": "eth0", "netmask": "255.255.255.0", "brd": "192.168.1.255", "gateway": "192.168.1.1"}, {"vlan": 100, "name": "floating", "dev": "eth0"}, {"vlan": 103, "name": "fixed", "dev": "eth0"}, {"name": "admin", "dev": "eth0"}], "role": "controller", "online": true, "progress": 0}]}}	{}	9	1
+\.
+
+
+--
+-- Data for Name: vlan; Type: TABLE DATA; Schema: public; Owner: nailgun
+--
+
+COPY vlan (id) FROM stdin;
+1
+100
+101
+102
+103
+\.
+
+
+--
+-- Name: allowed_networks_pkey; Type: CONSTRAINT; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+ALTER TABLE ONLY allowed_networks
+    ADD CONSTRAINT allowed_networks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: attributes_pkey; Type: CONSTRAINT; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+ALTER TABLE ONLY attributes
+    ADD CONSTRAINT attributes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: cluster_changes_pkey; Type: CONSTRAINT; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+ALTER TABLE ONLY cluster_changes
+    ADD CONSTRAINT cluster_changes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: clusters_name_key; Type: CONSTRAINT; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+ALTER TABLE ONLY clusters
+    ADD CONSTRAINT clusters_name_key UNIQUE (name);
+
+
+--
+-- Name: clusters_pkey; Type: CONSTRAINT; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+ALTER TABLE ONLY clusters
+    ADD CONSTRAINT clusters_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ip_addr_ranges_pkey; Type: CONSTRAINT; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+ALTER TABLE ONLY ip_addr_ranges
+    ADD CONSTRAINT ip_addr_ranges_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ip_addrs_pkey; Type: CONSTRAINT; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+ALTER TABLE ONLY ip_addrs
+    ADD CONSTRAINT ip_addrs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: l2_connections_pkey; Type: CONSTRAINT; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+ALTER TABLE ONLY l2_connections
+    ADD CONSTRAINT l2_connections_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: l2_topologies_pkey; Type: CONSTRAINT; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+ALTER TABLE ONLY l2_topologies
+    ADD CONSTRAINT l2_topologies_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: net_assignments_pkey; Type: CONSTRAINT; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+ALTER TABLE ONLY net_assignments
+    ADD CONSTRAINT net_assignments_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: network_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+ALTER TABLE ONLY network_groups
+    ADD CONSTRAINT network_groups_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: networks_pkey; Type: CONSTRAINT; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+ALTER TABLE ONLY networks
+    ADD CONSTRAINT networks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: node_attributes_pkey; Type: CONSTRAINT; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+ALTER TABLE ONLY node_attributes
+    ADD CONSTRAINT node_attributes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: node_nic_interfaces_pkey; Type: CONSTRAINT; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+ALTER TABLE ONLY node_nic_interfaces
+    ADD CONSTRAINT node_nic_interfaces_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: nodes_mac_key; Type: CONSTRAINT; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+ALTER TABLE ONLY nodes
+    ADD CONSTRAINT nodes_mac_key UNIQUE (mac);
+
+
+--
+-- Name: nodes_pkey; Type: CONSTRAINT; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+ALTER TABLE ONLY nodes
+    ADD CONSTRAINT nodes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: notifications_pkey; Type: CONSTRAINT; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+ALTER TABLE ONLY notifications
+    ADD CONSTRAINT notifications_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: plugins_name_key; Type: CONSTRAINT; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+ALTER TABLE ONLY plugins
+    ADD CONSTRAINT plugins_name_key UNIQUE (name);
+
+
+--
+-- Name: plugins_pkey; Type: CONSTRAINT; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+ALTER TABLE ONLY plugins
+    ADD CONSTRAINT plugins_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: red_hat_accounts_pkey; Type: CONSTRAINT; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+ALTER TABLE ONLY red_hat_accounts
+    ADD CONSTRAINT red_hat_accounts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: releases_name_key; Type: CONSTRAINT; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+ALTER TABLE ONLY releases
+    ADD CONSTRAINT releases_name_key UNIQUE (name, version);
+
+
+--
+-- Name: releases_pkey; Type: CONSTRAINT; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+ALTER TABLE ONLY releases
+    ADD CONSTRAINT releases_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tasks_pkey; Type: CONSTRAINT; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+ALTER TABLE ONLY tasks
+    ADD CONSTRAINT tasks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: vlan_pkey; Type: CONSTRAINT; Schema: public; Owner: nailgun; Tablespace: 
+--
+
+ALTER TABLE ONLY vlan
+    ADD CONSTRAINT vlan_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: allowed_networks_interface_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY allowed_networks
+    ADD CONSTRAINT allowed_networks_interface_id_fkey FOREIGN KEY (interface_id) REFERENCES node_nic_interfaces(id) ON DELETE CASCADE;
+
+
+--
+-- Name: allowed_networks_network_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY allowed_networks
+    ADD CONSTRAINT allowed_networks_network_id_fkey FOREIGN KEY (network_id) REFERENCES network_groups(id) ON DELETE CASCADE;
+
+
+--
+-- Name: attributes_cluster_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY attributes
+    ADD CONSTRAINT attributes_cluster_id_fkey FOREIGN KEY (cluster_id) REFERENCES clusters(id);
+
+
+--
+-- Name: cluster_changes_cluster_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY cluster_changes
+    ADD CONSTRAINT cluster_changes_cluster_id_fkey FOREIGN KEY (cluster_id) REFERENCES clusters(id);
+
+
+--
+-- Name: cluster_changes_node_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY cluster_changes
+    ADD CONSTRAINT cluster_changes_node_id_fkey FOREIGN KEY (node_id) REFERENCES nodes(id) ON DELETE CASCADE;
+
+
+--
+-- Name: clusters_release_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY clusters
+    ADD CONSTRAINT clusters_release_id_fkey FOREIGN KEY (release_id) REFERENCES releases(id);
+
+
+--
+-- Name: ip_addr_ranges_network_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY ip_addr_ranges
+    ADD CONSTRAINT ip_addr_ranges_network_group_id_fkey FOREIGN KEY (network_group_id) REFERENCES network_groups(id);
+
+
+--
+-- Name: ip_addrs_network_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY ip_addrs
+    ADD CONSTRAINT ip_addrs_network_fkey FOREIGN KEY (network) REFERENCES networks(id) ON DELETE CASCADE;
+
+
+--
+-- Name: ip_addrs_node_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY ip_addrs
+    ADD CONSTRAINT ip_addrs_node_fkey FOREIGN KEY (node) REFERENCES nodes(id) ON DELETE CASCADE;
+
+
+--
+-- Name: l2_connections_interface_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY l2_connections
+    ADD CONSTRAINT l2_connections_interface_id_fkey FOREIGN KEY (interface_id) REFERENCES node_nic_interfaces(id) ON DELETE CASCADE;
+
+
+--
+-- Name: l2_connections_topology_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY l2_connections
+    ADD CONSTRAINT l2_connections_topology_id_fkey FOREIGN KEY (topology_id) REFERENCES l2_topologies(id) ON DELETE CASCADE;
+
+
+--
+-- Name: l2_topologies_network_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY l2_topologies
+    ADD CONSTRAINT l2_topologies_network_id_fkey FOREIGN KEY (network_id) REFERENCES network_groups(id) ON DELETE CASCADE;
+
+
+--
+-- Name: net_assignments_interface_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY net_assignments
+    ADD CONSTRAINT net_assignments_interface_id_fkey FOREIGN KEY (interface_id) REFERENCES node_nic_interfaces(id) ON DELETE CASCADE;
+
+
+--
+-- Name: net_assignments_network_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY net_assignments
+    ADD CONSTRAINT net_assignments_network_id_fkey FOREIGN KEY (network_id) REFERENCES network_groups(id) ON DELETE CASCADE;
+
+
+--
+-- Name: network_groups_cluster_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY network_groups
+    ADD CONSTRAINT network_groups_cluster_id_fkey FOREIGN KEY (cluster_id) REFERENCES clusters(id);
+
+
+--
+-- Name: network_groups_release_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY network_groups
+    ADD CONSTRAINT network_groups_release_fkey FOREIGN KEY (release) REFERENCES releases(id);
+
+
+--
+-- Name: networks_network_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY networks
+    ADD CONSTRAINT networks_network_group_id_fkey FOREIGN KEY (network_group_id) REFERENCES network_groups(id);
+
+
+--
+-- Name: networks_release_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY networks
+    ADD CONSTRAINT networks_release_fkey FOREIGN KEY (release) REFERENCES releases(id);
+
+
+--
+-- Name: networks_vlan_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY networks
+    ADD CONSTRAINT networks_vlan_id_fkey FOREIGN KEY (vlan_id) REFERENCES vlan(id);
+
+
+--
+-- Name: node_attributes_node_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY node_attributes
+    ADD CONSTRAINT node_attributes_node_id_fkey FOREIGN KEY (node_id) REFERENCES nodes(id);
+
+
+--
+-- Name: node_nic_interfaces_node_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY node_nic_interfaces
+    ADD CONSTRAINT node_nic_interfaces_node_id_fkey FOREIGN KEY (node_id) REFERENCES nodes(id) ON DELETE CASCADE;
+
+
+--
+-- Name: nodes_cluster_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY nodes
+    ADD CONSTRAINT nodes_cluster_id_fkey FOREIGN KEY (cluster_id) REFERENCES clusters(id);
+
+
+--
+-- Name: notifications_cluster_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY notifications
+    ADD CONSTRAINT notifications_cluster_id_fkey FOREIGN KEY (cluster_id) REFERENCES clusters(id) ON DELETE SET NULL;
+
+
+--
+-- Name: notifications_node_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY notifications
+    ADD CONSTRAINT notifications_node_id_fkey FOREIGN KEY (node_id) REFERENCES nodes(id) ON DELETE SET NULL;
+
+
+--
+-- Name: notifications_task_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY notifications
+    ADD CONSTRAINT notifications_task_id_fkey FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE SET NULL;
+
+
+--
+-- Name: tasks_cluster_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY tasks
+    ADD CONSTRAINT tasks_cluster_id_fkey FOREIGN KEY (cluster_id) REFERENCES clusters(id);
+
+
+--
+-- Name: tasks_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: nailgun
+--
+
+ALTER TABLE ONLY tasks
+    ADD CONSTRAINT tasks_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES tasks(id);
+
+
+--
+-- Name: public; Type: ACL; Schema: -; Owner: postgres
+--
+
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+REVOKE ALL ON SCHEMA public FROM postgres;
+GRANT ALL ON SCHEMA public TO postgres;
+GRANT ALL ON SCHEMA public TO PUBLIC;
+
+
+--
+-- PostgreSQL database dump complete
+--
+
